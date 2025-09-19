@@ -2,9 +2,11 @@
  * Anonymous Analytics API Endpoint
  * POST /api/analytics
  * 
- * Stores anonymous usage data for insights
+ * Stores anonymous usage data for insights in Supabase
  * No personal information is stored
  */
+
+import { createClient } from '@supabase/supabase-js'
 
 export async function onRequest(context) {
   const { request, env } = context
@@ -68,29 +70,84 @@ export async function onRequest(context) {
       )
     }
 
-    // Add server-side timestamp and environment info
-    const enrichedData = {
-      ...analyticsData,
-      serverTimestamp: new Date().toISOString(),
-      environment: env.ENVIRONMENT || 'development',
-      version: env.APP_VERSION || '1.0.0',
+    // Determine event type
+    let eventType = 'pageview'
+    if (analyticsData.principal && analyticsData.interestRate) {
+      eventType = 'calculation'
+    } else if (analyticsData.type === 'export') {
+      eventType = 'export'
     }
 
-    // TODO: Store in database or analytics service
-    // For now, just log to console (visible in Cloudflare dashboard)
-    console.log('📊 Analytics:', JSON.stringify(enrichedData, null, 2))
+    // Prepare database record
+    const dbRecord = {
+      event_type: eventType,
+      session_id: analyticsData.sessionId,
+      timestamp: analyticsData.timestamp || new Date().toISOString(),
+      
+      // Calculation data (only for calculation events)
+      ...(eventType === 'calculation' && {
+        principal: analyticsData.principal,
+        interest_rate: analyticsData.interestRate / 100, // Convert percentage to decimal
+        term_years: analyticsData.termYears,
+        monthly_payment: analyticsData.monthlyPayment,
+        total_interest: analyticsData.totalInterest,
+      }),
+      
+      // Export data (only for export events)
+      ...(eventType === 'export' && {
+        export_type: analyticsData.exportType,
+        schedule_length: analyticsData.scheduleLength,
+      }),
+      
+      // Technical metadata
+      viewport: analyticsData.viewport || null,
+      user_agent: analyticsData.userAgent?.substring(0, 200) || null, // Truncate for privacy
+      referrer: analyticsData.referrer || null,
+      
+      // Environment data
+      server_timestamp: new Date().toISOString(),
+      environment: env.ENVIRONMENT || 'development',
+      app_version: env.APP_VERSION || '1.0.0',
+      
+      // Additional metadata
+      metadata: {
+        ...analyticsData.metadata,
+        server_processed: true,
+      },
+    }
 
-    // In production, you might want to:
-    // 1. Store in Supabase analytics table
-    // 2. Send to Google Analytics
-    // 3. Store in CloudFlare Analytics
-    // 4. Send to specialized analytics service
+    // Store in Supabase (if configured)
+    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+      try {
+        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
+        
+        const { data, error } = await supabase
+          .from('analytics_events')
+          .insert([dbRecord])
+          .select()
+        
+        if (error) {
+          console.error('Supabase analytics error:', error)
+          // Fall back to logging if database fails
+          console.log('📊 Analytics (DB failed):', JSON.stringify(dbRecord, null, 2))
+        } else {
+          console.log('📊 Analytics stored successfully:', data?.[0]?.id)
+        }
+      } catch (dbError) {
+        console.error('Database connection error:', dbError)
+        // Fall back to logging
+        console.log('📊 Analytics (fallback):', JSON.stringify(dbRecord, null, 2))
+      }
+    } else {
+      // No database configured, just log to console (visible in Cloudflare dashboard)
+      console.log('📊 Analytics (no DB):', JSON.stringify(dbRecord, null, 2))
+    }
 
     // Success response
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Analytics data received',
+        message: 'Analytics data processed',
         timestamp: new Date().toISOString(),
       }),
       {
