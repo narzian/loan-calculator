@@ -1,11 +1,96 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Clean, Modern App Styles Inspired by Groww */
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* App Container & Layout */
+.app-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
 }
-  
+
+.content-wrapper {
+  flex: 1;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Header */
+.main-header {
+  text-align: center;
+  margin: 2rem 0 3rem;
+  padding: 0 1rem;
+}
+
+.main-header h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.main-header p {
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Main Grid Layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 420px 1fr;
+    gap: 3rem;
+  }
+
+  .content-wrapper {
+    padding: 2rem;
+  }
+
+  .main-header {
+    margin: 1rem 0 2rem;
+  }
+}
+
+/* Clean Animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+
+  .main-header {
+    margin: 1rem 0 2rem;
+  }
+
+  .main-grid {
+    gap: 1.5rem;
+  }
+}

@@ -1,0 +1,35 @@
+name = "loan-calculator"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+vars = { ENVIRONMENT = "production", APP_VERSION = "1.0.0", SECURITY_HEADERS = "true" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging", APP_VERSION = "1.0.0-beta" }
+
+[env.development]
+vars = { ENVIRONMENT = "development", APP_VERSION = "1.0.0-dev" }
+
+# Pages Functions configuration
+pages_build_output_dir = "./dist"
+
+# Build configuration for Pages
+[build]
+command = "npm run build"
+cwd = "."
+
+# Environment variables for all environments
+# Note: Add your Supabase credentials as secrets, not in vars
+# Use: wrangler secret put SUPABASE_URL
+# Use: wrangler secret put SUPABASE_ANON_KEY
+[vars]
+ENVIRONMENT = "development"
+APP_VERSION = "1.0.0-dev"
+
+# Production deployment configuration
+# Uncomment and update when you have a custom domain
+# [env.production.routes]
+# pattern = "*"
+# zone_name = "your-domain.com"
+
