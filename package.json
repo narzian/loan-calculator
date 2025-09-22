@@ -1,0 +1,1 @@
+{"name": "loan-calc", "version": "1.0.0", "scripts": {"generate:sitemap": "sitemap-generator ./public/sitemap.xml", "prebuild": "npm run generate:sitemap"}, "dependencies": {"express": "^4.17.1", "sitemap-generator": "^1.5.0"}}
