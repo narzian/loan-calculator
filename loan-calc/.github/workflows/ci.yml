@@ -1,0 +1,36 @@
+name: PR checks — lint, test, build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pr-checks:
+    runs-on: ubuntu-latest
+    name: PR checks — lint, test, build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (loan-calc)
+        run: npm ci
+        working-directory: ./loan-calc
+
+      - name: Lint
+        run: npm run lint
+        working-directory: ./loan-calc
+
+      - name: Run tests
+        run: npm run test -- --run
+        working-directory: ./loan-calc
+
+      - name: Build (optional - catches build-time issues)
+        run: npm run build
+        working-directory: ./loan-calc
