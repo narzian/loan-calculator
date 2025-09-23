@@ -126,31 +126,31 @@ export async function onRequest(context) {
       allEnvKeys: Object.keys(env || {})
     })
 
-    // Store in Supabase (if configured)
+    // For now, let's just log everything to debug the environment variables
+    console.log('📊 Analytics data received:', JSON.stringify(dbRecord, null, 2))
+    
+    // Try to connect to Supabase just to test the connection
     if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
       try {
+        console.log('🔗 Attempting Supabase connection...')
         const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
         
+        // Just test the connection by checking available tables
         const { data, error } = await supabase
-          .from('analytics_events')
-          .insert([dbRecord])
-          .select()
+          .from('user_calculations')
+          .select('id')
+          .limit(1)
         
         if (error) {
-          console.error('Supabase analytics error:', error)
-          // Fall back to logging if database fails
-          console.log('📊 Analytics (DB failed):', JSON.stringify(dbRecord, null, 2))
+          console.error('❌ Supabase connection test failed:', error)
         } else {
-          console.log('📊 Analytics stored successfully:', data?.[0]?.id)
+          console.log('✅ Supabase connection successful, found', data?.length || 0, 'records')
         }
       } catch (dbError) {
-        console.error('Database connection error:', dbError)
-        // Fall back to logging
-        console.log('📊 Analytics (fallback):', JSON.stringify(dbRecord, null, 2))
+        console.error('❌ Database connection error:', dbError)
       }
     } else {
-      // No database configured, just log to console (visible in Cloudflare dashboard)
-      console.log('📊 Analytics (no DB):', JSON.stringify(dbRecord, null, 2))
+      console.log('⚠️ No Supabase credentials found - analytics will only be logged')
     }
 
     // Success response
