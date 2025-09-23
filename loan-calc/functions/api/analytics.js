@@ -116,6 +116,16 @@ export async function onRequest(context) {
       },
     }
 
+    // Debug: Log environment variable status
+    console.log('🔍 Environment check:', {
+      hasSupabaseUrl: !!env.SUPABASE_URL,
+      hasSupabaseKey: !!env.SUPABASE_ANON_KEY,
+      supabaseUrlLength: env.SUPABASE_URL?.length || 0,
+      supabaseKeyLength: env.SUPABASE_ANON_KEY?.length || 0,
+      environment: env.ENVIRONMENT || 'undefined',
+      allEnvKeys: Object.keys(env || {})
+    })
+
     // Store in Supabase (if configured)
     if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
       try {
