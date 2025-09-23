@@ -126,31 +126,65 @@ export async function onRequest(context) {
       allEnvKeys: Object.keys(env || {})
     })
 
-    // For now, let's just log everything to debug the environment variables
-    console.log('📊 Analytics data received:', JSON.stringify(dbRecord, null, 2))
-    
-    // Try to connect to Supabase just to test the connection
-    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+    // Store calculation analytics in existing user_calculations table
+    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY && eventType === 'calculation') {
       try {
-        console.log('🔗 Attempting Supabase connection...')
+        console.log('🔗 Storing analytics in user_calculations table...')
         const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
         
-        // Just test the connection by checking available tables
+        // Create a calculation record that fits your existing schema
+        const calculationRecord = {
+          user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user UUID
+          name: `Analytics: ${new Date().toISOString().split('T')[0]} - ₹${analyticsData.principal?.toLocaleString()}`,
+          calculation: {
+            principal: analyticsData.principal,
+            annualRate: analyticsData.interestRate,
+            years: analyticsData.termYears,
+            monthlyPayment: analyticsData.monthlyPayment,
+            totalInterest: analyticsData.totalInterest,
+            totalPayment: analyticsData.monthlyPayment * analyticsData.termYears * 12,
+            timestamp: analyticsData.timestamp,
+            currency: 'INR',
+            // Store all analytics metadata in the calculation object
+            analytics: {
+              sessionId: analyticsData.sessionId,
+              viewport: analyticsData.viewport,
+              userAgent: analyticsData.userAgent?.substring(0, 100),
+              referrer: analyticsData.referrer,
+              environment: env.ENVIRONMENT || 'development',
+              serverTimestamp: new Date().toISOString()
+            }
+          },
+          tags: ['anonymous', 'analytics'], // Required for RLS policy
+          is_favorite: false
+        }
+        
         const { data, error } = await supabase
           .from('user_calculations')
-          .select('id')
-          .limit(1)
+          .insert([calculationRecord])
+          .select()
         
         if (error) {
-          console.error('❌ Supabase connection test failed:', error)
+          console.error('❌ Supabase analytics insert failed:', error)
+          console.log('📊 Fallback - logging analytics data:', JSON.stringify(calculationRecord, null, 2))
         } else {
-          console.log('✅ Supabase connection successful, found', data?.length || 0, 'records')
+          console.log('✅ Analytics stored successfully! ID:', data?.[0]?.id)
+          console.log('📊 Stored calculation:', {
+            principal: calculationRecord.calculation.principal,
+            rate: calculationRecord.calculation.annualRate,
+            term: calculationRecord.calculation.years,
+            sessionId: calculationRecord.calculation.analytics.sessionId
+          })
         }
       } catch (dbError) {
         console.error('❌ Database connection error:', dbError)
+        console.log('📊 Fallback - logging analytics data:', JSON.stringify(dbRecord, null, 2))
       }
+    } else if (eventType !== 'calculation') {
+      // Log non-calculation events (pageview, export) for now
+      console.log('📊 Non-calculation analytics:', JSON.stringify(dbRecord, null, 2))
     } else {
-      console.log('⚠️ No Supabase credentials found - analytics will only be logged')
+      console.log('⚠️ No Supabase credentials - analytics logged only')
     }
 
     // Success response
