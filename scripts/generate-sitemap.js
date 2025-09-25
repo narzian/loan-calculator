@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const baseUrl = process.env.SITE_URL || 'https://your-domain.com';
+const baseUrl = process.env.SITE_URL || 'https://loan-calculator-7l2.pages.dev/';
 const routes = [
   '/',
   '/calculator',
